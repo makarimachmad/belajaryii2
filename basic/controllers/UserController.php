@@ -2,9 +2,10 @@
 
 namespace app\controllers;
 
+use app\models\User;
 use yii\rest\ActiveController;
 
 class UserController extends ActiveController
 {
-    public $modelClass = 'app\models\User';
+    public $modelClass = User::Class;
 }
