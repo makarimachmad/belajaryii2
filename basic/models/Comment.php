@@ -3,6 +3,8 @@
 namespace app\models;
 
 use Yii;
+use yii\behaviors\BlameableBehavior;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "{{%comment}}".
@@ -26,6 +28,17 @@ class Comment extends \yii\db\ActiveRecord
     public static function tableName()
     {
         return '{{%comment}}';
+    }
+
+    public function behaviors(){
+        return [
+            TimestampBehavior::class,
+            [
+                'class' => BlameableBehavior::class,
+                'updatedByAttribute' => false,
+                'createdByAttribute' => true,
+            ]
+        ];
     }
 
     /**
