@@ -9,6 +9,6 @@ class Post extends \app\models\Post
 	}
 
 	public function extraFields(){
-		return ['created_at', 'updated_at', 'updated_by'];
+		return ['created_at', 'updated_at', 'updated_by', 'created_by'];
 	}
 }
