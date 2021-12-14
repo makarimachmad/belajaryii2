@@ -34,7 +34,8 @@ class Post extends \yii\db\ActiveRecord
             TimestampBehavior::class,
             [
                 'class' => BlameableBehavior::class,
-                'updatedByAttribute' => false
+                'updatedByAttribute' => false,
+                'createdByAttribute' => true,
             ]
         ];
     }
