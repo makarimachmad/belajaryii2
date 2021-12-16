@@ -52,7 +52,12 @@ $config = [
             'enableStrictParsing' => true,
             'showScriptName' => false,
             'rules' => [
-                ['class' => 'yii\rest\UrlRule', 'controller' => ['user', 'post', 'comment']]
+                ['class' => 'yii\rest\UrlRule', 'controller' => ['user', 'post', 'comment', 'site']],
+                [
+                    'pattern' => 'posts/<postId:\d+>/comments',
+                    'route' => 'comment/index'
+                ],
+                
             ],
         ],
         
