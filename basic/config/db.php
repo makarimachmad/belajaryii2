@@ -1,10 +1,20 @@
 <?php
 
+use Symfony\Component\Dotenv\Dotenv;
+
+$dotenv = new Dotenv();
+$dotenv->load(__DIR__.'/../.env');
+
+$dbUser = $_ENV['DB_USER'];
+$dbName = $_ENV['DB_NAME'];
+$dbHost = $_ENV['DB_HOST'];
+$dbPass = $_ENV['DB_PASS'];
+
 return [
     'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=yii2basic',
-    'username' => 'root',
-    'password' => '',
+    'dsn' => "mysql:host={$dbHost};dbname={$dbName}",
+    'username' => $dbUser,
+    'password' => $dbPass,
     'charset' => 'utf8',
 
     // Schema cache options (for production environment)
