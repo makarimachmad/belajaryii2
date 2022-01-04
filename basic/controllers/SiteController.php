@@ -10,6 +10,7 @@ use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\EntryForm;
+use app\models\SignupForm;
 
 class SiteController extends Controller
 {
@@ -21,19 +22,25 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['logout'],
+                'only' => ['logout', 'send-otp', 'login'],
                 'rules' => [
                     [
                         'actions' => ['logout'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
+                    [
+                        'actions' => ['send-otp','login'],
+                        'allow' => true,
+                        'roles' => ['?']
+                    ]
                 ],
             ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
                     'logout' => ['post'],
+                    'send-otp' => ['post']
                 ],
             ],
         ];
@@ -72,18 +79,31 @@ class SiteController extends Controller
      */
     public function actionLogin()
     {
-        if (!Yii::$app->user->isGuest) {
+        if (! Yii::$app->user->isGuest) {
             return $this->goHome();
         }
-
+        
         $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+        if (\Yii::$app->request->isAjax){
+            \Yii::$app->response->format = 'json';
+            $model->load(Yii::$app->request->post());
+            if ($model->login()) {
+                $response = [
+                    'success' => true,
+                    'msg' => 'Login Successful'
+                ];
+            } else {
+                $error = implode(", ", \yii\helpers\ArrayHelper::getColumn($model->errors, 0, false)); // Model's Errors string
+                $response = [
+                    'success' => false,
+                    'msg' => $error
+                ];
+            }
+            return $response;
         }
-
         $model->password = '';
         return $this->render('login', [
-            'model' => $model,
+            'model' => $model
         ]);
     }
 
@@ -139,5 +159,77 @@ class SiteController extends Controller
         }else{
             return $this->render('entry', ['model' => $model]);
         }
+    }
+
+    public function actionSignup()
+    {
+        $model = new SignupForm();
+ 
+        if ($model->load(Yii::$app->request->post())) {
+            if ($user = $model->signup()) {
+                if (Yii::$app->getUser()->login($user)) {
+                    return $this->goHome();
+                }
+            }
+        }
+ 
+        return $this->render('signup', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionSendOtp()
+    {
+        $phone = \Yii::$app->request->post('phone');
+        \Yii::$app->response->format = 'json';
+        $response = [];
+        if ($phone) {
+            $user = \app\models\User::findByPhone($phone);
+            $otp = rand(100000, 999999); // a random 6 digit number
+            if ($user == null) {
+                $user = new \app\models\User();
+                $user->phone = $phone;
+                $user->created_on = time();
+            }
+            $user->otp = "$otp";
+            $user->otp_expire = time() + 600; // To expire otp after 10 minutes
+            if (! $user->save()) {
+                $errorString = implode(", ", \yii\helpers\ArrayHelper::getColumn($user->errors, 0, false)); // Model's Errors string
+                $response = [
+                    'success' => false,
+                    'msg' => $errorString
+                ];
+            } else {
+                $msg = 'One Time Passowrd(OTP) is ' . $otp;
+                
+                $sid = \Yii::$app->params['twilioSid'];  //accessing the above twillio credentials saved in params.php file
+                $token = \Yii::$app->params['twiliotoken'];
+                $twilioNumber = \Yii::$app->params['twilioNumber'];
+                
+                try{
+                        $client = new \Twilio\Rest\Client($sid, $token);
+                        $client->messages->create($phone, [
+                            'from' => $twilioNumber,
+                            'body' => (string) $msg
+                        ]);
+                        
+                        $response = [
+                            'success' => true,
+                            'msg' => 'OTP Sent and valid for 10 minutes.'
+                        ];
+                }catch(\Exception $e){
+                    $response = [
+                        'success' => false,
+                        'msg' => $e->getMessage()
+                    ];
+                }
+            }
+        } else {
+            $response = [
+                'success' => false,
+                'msg' => 'Phone number is empty.'
+            ];
+        }
+        return $response;
     }
 }
