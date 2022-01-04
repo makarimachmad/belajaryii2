@@ -2,13 +2,45 @@
 
 namespace app\models;
 
-class User extends \yii\db\ActiveRecord
+use yii\web\IdentityInterface;
+
+class User extends \yii\db\ActiveRecord implements IdentityInterface
 {
     public $id;
     public $username;
     public $password;
     public $authKey;
     public $accessToken;
+
+    public static function tableName()
+    {
+        return 'user';
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function rules()
+    {
+        return [
+            [['phone'], 'required'],
+            [['phone'], 'unique'],
+            ['phone', 'match', 'pattern' => '/^\+?[1-9]\d{1,14}$/'], //E.164 Format pattern match
+            [['otp'], 'string','min'=>4,'max'=>10]
+        ];
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+            'phone' => 'Phone Number',
+            'otp' => 'OTP',
+            'created_date' => 'Created Date'
+        ];
+    }
 
     private static $users = [
         100 => [
@@ -76,6 +108,19 @@ class User extends \yii\db\ActiveRecord
     }
 
     /**
+     * Finds user by phone
+     *
+     * @param string $phone
+     * @return static|null
+     */
+    public static function findByPhone($phone)
+    {
+        return static::findOne([
+            'phone' => $phone
+        ]);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getAuthKey()
@@ -100,5 +145,19 @@ class User extends \yii\db\ActiveRecord
     public function validatePassword($password)
     {
         return $this->password === $password;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function beforeSave($insert)
+    {
+        if (parent::beforeSave($insert)) {
+            if ($this->isNewRecord) {
+                $this->auth_key = \Yii::$app->security->generateRandomString();
+            }
+            return true;
+        }
+        return false;
     }
 }
