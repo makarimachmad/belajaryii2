@@ -25,16 +25,28 @@ $config = [
         'user' => [
             'identityClass' => 'app\models\User',
             'enableAutoLogin' => true,
+            // 'confirmWithin' => 21600,
+            // 'cost' => 12,
+            // 'admins' => ['admin'],
         ],
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
         'mailer' => [
             'class' => 'yii\swiftmailer\Mailer',
+            'viewPath' => '@app/mailere',
             // send all mails to a file by default. You have to set
             // 'useFileTransport' to false and configure a transport
             // for the mailer to send real emails.
-            'useFileTransport' => true,
+            'useFileTransport' => false,
+            'transport' => [
+                'class' => 'Swift_SmtpTransport',
+                'host' => 'your-host-domain e.g. smtp.gmail.com',
+                'username' => 'your-email-or-username',
+                'password' => 'your-password',
+                'port' => '587',
+                'encryption' => 'tls',
+            ],
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
@@ -53,11 +65,10 @@ $config = [
             'showScriptName' => false,
             'rules' => [
                 ['class' => 'yii\rest\UrlRule', 'controller' => ['user', 'post', 'comment', 'site']],
-                [
-                    'pattern' => 'posts/<postId:\d+>/comments',
-                    'route' => 'comment/index'
-                ],
-                
+                // [
+                //     'pattern' => 'posts/<postId:\d+>/comments',
+                //     'route' => 'comment/index'
+                // ],
             ],
         ],
         
